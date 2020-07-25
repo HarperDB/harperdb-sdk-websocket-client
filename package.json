@@ -1,0 +1,28 @@
+{
+  "name": "harperdb-sdk-websocket-client",
+  "version": "0.0.1",
+  "description": "",
+  "main": "./index.js",
+  "type": "module",
+  "scripts": {
+    "test": "tap"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HarperDB/harperdb-sdk-websocket-client.git"
+  },
+  "keywords": [],
+  "author": "Ethan Arrowood <ethan.arrowood@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/HarperDB/harperdb-sdk-websocket-client/issues"
+  },
+  "homepage": "https://github.com/HarperDB/harperdb-sdk-websocket-client#readme",
+  "devDependencies": {
+    "eslint": "^7.5.0",
+    "tap": "^14.10.8"
+  },
+  "dependencies": {
+    "socketcluster-client": "^14.3.1"
+  }
+}

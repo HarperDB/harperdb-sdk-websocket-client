@@ -1,13 +1,19 @@
-import tap from 'tap'
-import HarperDBWebSocketClient from './index'
+// @ts-check
+
+'use strict'
+
+const tap = require('tap')
+const HarperDBWebSocketClient = require('./index.js')
 
 const client = new HarperDBWebSocketClient({
-	hostname: 'http://localhost',
-	port: 31283,
-	username: 'HDB_ADMIN',
-	password: 'password'
+	hostname: 'localhost',
+	port: 1111,
+	username: 'CLUSTER_USER',
+	password: '1400',
+	throwOnSocketClusterError: true
 })
 
-client.init({})
+client.init()
 
 tap.pass()
+

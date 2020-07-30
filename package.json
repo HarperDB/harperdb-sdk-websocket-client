@@ -3,9 +3,9 @@
   "version": "0.0.1",
   "description": "",
   "main": "./index.js",
-  "type": "module",
   "scripts": {
-    "test": "tap"
+    "test": "tap",
+    "docs": "jsdoc index.js"
   },
   "repository": {
     "type": "git",
@@ -20,6 +20,7 @@
   "homepage": "https://github.com/HarperDB/harperdb-sdk-websocket-client#readme",
   "devDependencies": {
     "eslint": "^7.5.0",
+    "jsdoc": "^3.6.5",
     "tap": "^14.10.8"
   },
   "dependencies": {

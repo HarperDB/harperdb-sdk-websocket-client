@@ -3,6 +3,7 @@
 'use strict'
 
 const socketcluster = require('socketcluster-client')
+const assert = require('assert')
 
 class HarperDBWebSocketClient {
 	/**
@@ -12,6 +13,7 @@ class HarperDBWebSocketClient {
 	 * 
 	 * @param {Object} options
 	 * @param {boolean} [options.throwOnSocketClusterError]
+	 * @param {boolean} [options.debug]
 	 * @param {string} options.hostname
 	 * @param {number} options.port
 	 * @param {string} options.username
@@ -19,6 +21,10 @@ class HarperDBWebSocketClient {
 	 */
 	constructor(options) {
 		this.options = options
+
+		if (!options.debug) {
+			this.options.debug = process.env.NODE_ENV === 'development'
+		}
 
 		/**
 		 * Default SocketCluster options - useful for a standard or quick setup.
@@ -55,18 +61,31 @@ class HarperDBWebSocketClient {
 	 * Configure the connection using the first argument.
 	 * Documentation for SocketCluster v14 can be found here: https://www.socketcluster.io/docs/14.4.2/api/
 	 * 
-	 * @param {*} [socketClusterOptions=DefaultSocketClusterOptions]
+	 * If you must override the onLogin event handler make sure that you call the second argument with `(null, { username: '<username>', password: '<password>' })`.
+	 * 
+	 * For example: 
+	 * ```
+	 * (data, res) => { 
+	 * 	res(null, { username: 'admin', password: 'abc123' }) 
+	 * }
+	 * ```
+	 * 
+	 * @param {object} [socketClusterOptions=DefaultSocketClusterOptions]
+	 * @param {object} [handlers] event handlers for the default error, login, and connect events. Will override default handlers.
+	 * @param {(err: Error) => void} [handlers.onError] error event handler
+	 * @param {(data: any, res: (err: any, credentials: { username: string, password: string }) => void ) => void} [handlers.onLogin] login event handler, must call response with authentication credentials. See usage docs for more details
+	 * @param {(data: any, res: () => void ) => void} [handlers.onConnect] connect event handler
 	 */
-	init(socketClusterOptions = this.defaultSocketClusterOptions) {
+	init(socketClusterOptions = this.defaultSocketClusterOptions, handlers) {
 		this.socket = socketcluster.create({
 			hostname: this.options.hostname,
 			port: this.options.port,
 			...socketClusterOptions
 		})
 
-		this.socket.on('error', this.errorHandler.bind(this))
-		this.socket.on('login', this.loginHandler.bind(this))
-		this.socket.on('connect', this.connectHandler.bind(this))
+		this.socket.on('error', Object.prototype.hasOwnProperty.call(handlers, 'onError') ? handlers.onError.bind(this) : this.onError.bind(this))
+		this.socket.on('login', Object.prototype.hasOwnProperty.call(handlers, 'onLogin') ? handlers.onLogin.bind(this) : this.onLogin.bind(this))
+		this.socket.on('connect', Object.prototype.hasOwnProperty.call(handlers, 'onConnect') ? handlers.onConnect.bind(this) : this.onConnect.bind(this))
 	}
 
 	/**
@@ -74,10 +93,10 @@ class HarperDBWebSocketClient {
 	 * @private
 	 * @param {Error} err 
 	 */
-	errorHandler (err) {
+	onError (err) {
 		if (this.options.throwOnSocketClusterError) {
 			throw err
-		} else {
+		} else if (this.options.debug) {
 			console.error(err)
 		}
 	}
@@ -86,93 +105,103 @@ class HarperDBWebSocketClient {
 	 * Internal login event handler
 	 * @private
 	 * @param {*} data 
-	 * @param {*} res 
+	 * @param {(err: any, credentials: { username: string, password: string }) => void} res 
 	 */
-	loginHandler (data, res) {
-		if (process.env.NODE_ENV === 'development') {
+	onLogin (data, res) {
+		if (this.options.debug) {
 			console.log('login handler ', data, res)
 		}
+
+		res(null, { username: this.options.username, password: this.options.password })
 	}
 
 	/**
 	 * Internal connect event handler
 	 * @private
 	 * @param {*} data 
-	 * @param {*} res 
+	 * @param {() => void} res 
 	 */
-	connectHandler (data, res) {
-		if (process.env.NODE_ENV === 'development') {
+	onConnect (data, res) {
+		if (this.options.debug) {
 			console.log('connect handler ', data, res)
 		}
-		console.log('Connected')
 	}
 
 	/**
 	 * Used to validate the data attempting to be published to HarperDB
 	 * @param {string} channel
 	 * @param {object[]} records
-	 * @returns {*}
+	 * @returns {string[]} array tuple containing the channel schema (first) and table (second)
 	 */
-	publishValidation(channel, records){
+	validate(channel, records) {
 		if (!Array.isArray(records) || records.length === 0){
 			throw new Error('records must be an array with at least one entry')
 		}
-		const schema_table = channel.split(':')
-		if (schema_table.length !== 2){
+		const schemaTable = channel.split(':')
+		if (schemaTable.length !== 2){
 			throw new Error('invalid channel name')
 		}
-		return schema_table
+		return schemaTable
 	}
 
 	/**
-	 * Publishes an insert operation to a HarperDB channel (table)
+	 * Publishes an insert operation to a HarperDB channel
 	 * @param {String} channel - name of the channel to publish to i.e. "dev:dog"
 	 * @param {object[]} records - Object Array to insert
 	 */
-	publishInsert(channel, records){
-		const schema_table = this.publishValidation(channel, records)
+	insert(channel, records) {
+		const [schema, table] = this.validate(channel, records)
 		const transaction = {
 			operation: 'insert',
-			schema: schema_table[0],
-			table: schema_table[1],
+			schema: schema,
+			table: table,
 			records: records
 		}
-		const publish_object = this.createTransaction(transaction, schema_table[0], schema_table[1])
-		this.socket.publish(channel, publish_object)
+		const data = this.createTransaction(transaction, schema, table)
+		if (this.options.debug) {
+			console.log(`publishing insert event on channel ${channel} with `, data)
+		}
+		this.socket.publish(channel, data)
 	}
 
 	/**
-	 * Publishes an update operation to a HarperDB channel (table)
+	 * Publishes an update operation to a HarperDB channel
 	 * @param {string} channel - name of the channel to publish to i.e. "dev:dog"
 	 * @param {object[]} records - Object Array to update
 	 */
-	publishUpdate(channel, records){
-		const schema_table = this.publishValidation(channel, records)
+	update(channel, records) {
+		const [schema, table] = this.validate(channel, records)
 		const transaction = {
 			operation: 'update',
-			schema: schema_table[0],
-			table: schema_table[1],
+			schema: schema,
+			table: table,
 			records: records
 		}
-		const publish_object = this.createTransaction(transaction, schema_table[0], schema_table[1])
-		this.socket.publish(channel, publish_object)
+		const data = this.createTransaction(transaction, schema, table)
+		if (this.options.debug) {
+			console.log(`publishing update event on channel ${channel} with `, data)
+		}
+		this.socket.publish(channel, data)
 	}
 
 	/**
-	 * Publishes a delete operation to a HarperDB channel (table)
+	 * Publishes a delete operation to a HarperDB channel
 	 * @param {string} channel - name of the channel to publish to i.e. "dev:dog"
 	 * @param {string[]|number[]} hashes
 	 */
-	publishDelete(channel, hashes){
-		const schema_table = this.publishValidation(channel, hashes)
+	delete(channel, hashes){
+		const [schema, table] = this.validate(channel, hashes)
 		const transaction = {
 			operation: 'delete',
-			schema: schema_table[0],
-			table: schema_table[1],
+			schema: schema,
+			table: table,
 			hash_values: hashes
 		}
-		const publish_object = this.createTransaction(transaction, schema_table[0], schema_table[1])
-		this.socket.publish(channel, publish_object)
+		const data = this.createTransaction(transaction, schema, table)
+		if (this.options.debug) {
+			console.log(`publishing delete event on channel ${channel} with `, data)
+		}
+		this.socket.publish(channel, data)
 	}
 
 	/**
@@ -182,17 +211,31 @@ class HarperDBWebSocketClient {
 	 * @param {string} table - name of table
 	 * @returns {{schema: *, type: string, table: *, __originator: {}, transaction: *, hdb_header: {__data_source: number}}}
 	 */
-	createTransaction(transaction, schema, table){
-		const transaction_object = {
-			hdb_header:{__data_source:6},
+	createTransaction(transaction, schema, table) {
+		// @ts-ignore
+		assert(typeof transaction === 'object' && transaction !== undefined && transaction !== null, `1st argument ${transaction} must be a non-null object`)
+		// @ts-ignore
+		assert(typeof schema === 'string', `2nd argument ${schema} must be a string`)
+		// @ts-ignore
+		assert(typeof table === 'string', `3rd argument ${table} must be a string`)
+
+		return {
+			hdb_header: { __data_source: 6 },
 			type: 'HDB_TRANSACTION',
 			schema: schema,
 			table: table,
-			__originator:{},
+			__originator: { [this.socket.id]: 111 },
 			transaction: transaction
 		}
-		transaction_object.__originator[this.socket.id] = 111
-		return transaction_object
+	}
+
+	/**
+	 * Subscribes to a websocket channel. HarperDB uses `schema:table` for its channel names
+	 * @param {string} channel event to be subscribed too
+	 * @param {function} handler handler function for the event listener
+	 */
+	subscribe(channel, handler) {
+		this.socket.subscribe(channel).watch(handler)
 	}
 }
 

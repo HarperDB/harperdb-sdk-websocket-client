@@ -2,18 +2,32 @@
 
 'use strict'
 
-const tap = require('tap')
+// const tap = require('tap')
 const HarperDBWebSocketClient = require('./index.js')
 
 const client = new HarperDBWebSocketClient({
 	hostname: 'localhost',
 	port: 1111,
-	username: 'CLUSTER_USER',
-	password: '1400',
+	username: 'cluster_user',
+	password: 'password',
 	throwOnSocketClusterError: true
 })
 
 client.init()
 
-tap.pass()
+client.subscribe('dev:dog', data => {
+	console.log(data)
+})
+
+client.insert(
+	'dev:dog',
+	[
+		{
+			id: 1,
+			dogName: 'Penny'
+		}
+	]
+)
+
+// tap.pass()
 

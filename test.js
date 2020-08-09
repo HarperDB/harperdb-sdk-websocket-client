@@ -10,10 +10,11 @@ const client = new HarperDBWebSocketClient({
 	port: 1111,
 	username: 'cluster_user',
 	password: 'password',
-	throwOnSocketClusterError: true
+	throwOnSocketClusterError: true,
+	implicitInit: true
 })
 
-client.init()
+// client.init()
 
 client.subscribe('dev:dog', data => {
 	console.log(data)

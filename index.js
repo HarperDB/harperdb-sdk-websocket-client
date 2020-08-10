@@ -30,7 +30,7 @@ class HarperDBWebSocketClient {
 	}
 
 	init() {
-		if (this.options.implicitInit) {
+		if (this.initialized) {
 			throw Error('init method already called by constructor due do option `implicitInit`')
 		}
 
@@ -42,22 +42,24 @@ class HarperDBWebSocketClient {
 
 		this.socket.on(
 			'error',
-			Object.prototype.hasOwnProperty.call(this.options.handlers, 'onError')
+			this.options.handlers && Object.prototype.hasOwnProperty.call(this.options.handlers, 'onError')
 				? this.options.handlers.onError.bind(this) 
 				: this.onError.bind(this)
 		)
 		this.socket.on(
 			'login',
-			Object.prototype.hasOwnProperty.call(this.options.handlers, 'onLogin')
+			this.options.handlers && Object.prototype.hasOwnProperty.call(this.options.handlers, 'onLogin')
 				? this.options.handlers.onLogin.bind(this)
 				: this.onLogin.bind(this)
 		)
 		this.socket.on(
 			'connect',
-			Object.prototype.hasOwnProperty.call(this.options.handlers, 'onConnect')
+			this.options.handlers && Object.prototype.hasOwnProperty.call(this.options.handlers, 'onConnect')
 				? this.options.handlers.onConnect.bind(this)
 				: this.onConnect.bind(this)
 		)
+
+		this.initialized = true
 	}
 
 	onError (err) {

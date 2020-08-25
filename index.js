@@ -44,25 +44,25 @@ class HarperDBWebSocketClient {
 			'error',
 			this.options.handlers && Object.prototype.hasOwnProperty.call(this.options.handlers, 'onError')
 				? this.options.handlers.onError.bind(this) 
-				: this.onError.bind(this)
+				: this._onError.bind(this)
 		)
 		this.socket.on(
 			'login',
 			this.options.handlers && Object.prototype.hasOwnProperty.call(this.options.handlers, 'onLogin')
 				? this.options.handlers.onLogin.bind(this)
-				: this.onLogin.bind(this)
+				: this._onLogin.bind(this)
 		)
 		this.socket.on(
 			'connect',
 			this.options.handlers && Object.prototype.hasOwnProperty.call(this.options.handlers, 'onConnect')
 				? this.options.handlers.onConnect.bind(this)
-				: this.onConnect.bind(this)
+				: this._onConnect.bind(this)
 		)
 
 		this.initialized = true
 	}
 
-	onError (err) {
+	_onError (err) {
 		if (this.options.throwOnSocketClusterError) {
 			throw err
 		} else if (this.options.debug) {
@@ -70,7 +70,7 @@ class HarperDBWebSocketClient {
 		}
 	}
 
-	onLogin (data, res) {
+	_onLogin (data, res) {
 		if (this.options.debug) {
 			console.log('login handler ', data, res)
 		}
@@ -78,13 +78,13 @@ class HarperDBWebSocketClient {
 		res(null, { username: this.options.username, password: this.options.password })
 	}
 
-	onConnect (data, res) {
+	_onConnect (data, res) {
 		if (this.options.debug) {
 			console.log('connect handler ', data, res)
 		}
 	}
 
-	validate(channel, records) {
+	_validate(channel, records) {
 		if (!Array.isArray(records) || records.length === 0){
 			throw new Error('records must be an array with at least one entry')
 		}
@@ -96,14 +96,14 @@ class HarperDBWebSocketClient {
 	}
 
 	insert(channel, records) {
-		const [schema, table] = this.validate(channel, records)
+		const [schema, table] = this._validate(channel, records)
 		const transaction = {
 			operation: 'insert',
 			schema: schema,
 			table: table,
 			records: records
 		}
-		const payload = this.createPayload(transaction, schema, table)
+		const payload = this._createPayload(transaction, schema, table)
 		if (this.options.debug) {
 			console.log(`publishing insert event on channel ${channel} with `, payload)
 		}
@@ -111,14 +111,14 @@ class HarperDBWebSocketClient {
 	}
 
 	update(channel, records) {
-		const [schema, table] = this.validate(channel, records)
+		const [schema, table] = this._validate(channel, records)
 		const transaction = {
 			operation: 'update',
 			schema: schema,
 			table: table,
 			records: records
 		}
-		const payload = this.createPayload(transaction, schema, table)
+		const payload = this._createPayload(transaction, schema, table)
 		if (this.options.debug) {
 			console.log(`publishing update event on channel ${channel} with `, payload)
 		}
@@ -126,29 +126,21 @@ class HarperDBWebSocketClient {
 	}
 
 	delete(channel, hashes){
-		const [schema, table] = this.validate(channel, hashes)
+		const [schema, table] = this._validate(channel, hashes)
 		const transaction = {
 			operation: 'delete',
 			schema: schema,
 			table: table,
 			hash_values: hashes
 		}
-		const payload = this.createPayload(transaction, schema, table)
+		const payload = this._createPayload(transaction, schema, table)
 		if (this.options.debug) {
 			console.log(`publishing delete event on channel ${channel} with `, payload)
 		}
 		this.socket.publish(channel, payload)
 	}
 
-	createPayload(transaction, schema, table) {
-		if (typeof transaction === 'object' && transaction !== undefined && transaction !== null) {
-			throw Error(`1st argument ${transaction} must be a non-null object`)
-		} else if (typeof schema !== 'string') {
-			throw Error(`2nd argument ${schema} must be a string`)
-		} else if (typeof table !== 'string') {
-			throw Error(`3rd argument ${table} must be a string`)
-		}
-
+	_createPayload(transaction, schema, table) {
 		return {
 			hdb_header: { __data_source: 6 },
 			type: 'HDB_TRANSACTION',

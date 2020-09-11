@@ -1,162 +1,102 @@
 'use strict'
 
-const got = require('got')
+const t = require('tap')
+const sinon = require('sinon')
+const rewire = require('rewire')
+const EE = require('events')
+const HarperDBWebSocketClient = rewire('./')
 
-const tap = require('tap')
+t.test('configured handlers should fire on specified events', t => {
+	t.plan(3)
 
-const HarperDBWebSocketClient = require('./index.js')
+	const ee = new EE()
 
-const socketClusterOptions = {
-	rejectUnauthorized: false,
-	autoReconnect: false,
-	ackTimeout: 10000,
-	secure: true
-}
+	const revert = HarperDBWebSocketClient.__set__('socketcluster', {
+		create: () => ee
+	})
 
-let client
+	const ONCONNECT = 'connect'
+	const ONERROR = 'error'
+	const ONLOGIN = 'login'
 
-tap.afterEach(done => {
-	if (Object.prototype.hasOwnProperty.call(client, 'socket')) {
-		client.socket.destroy()
-	}
-
-	done()
-})
-
-tap.test('connect handler fires', t => {
-	client = new HarperDBWebSocketClient({
-		hostname: 'localhost',
-		socketClusterOptions,
-		port: 1111,
-		username: 'cluster_user',
-		password: 'password',
+	const client = new HarperDBWebSocketClient({
+		hostname: '',
+		port: 0,
+		username: '',
+		password: '',
 		handlers: {
-			onConnect: (data) => {
-				t.true(Object.prototype.hasOwnProperty.call(data, 'id'))
-				t.true(Object.prototype.hasOwnProperty.call(data, 'pingTimeout'))
-				t.true(Object.prototype.hasOwnProperty.call(data, 'isAuthenticated'))
-				t.true(Object.prototype.hasOwnProperty.call(data, 'authToken'))
-				t.end()
+			onConnect: data => {
+				t.equal(data, ONCONNECT)
+			},
+			onError: data => {
+				t.equal(data, ONERROR)
+			},
+			onLogin: data => {
+				t.equal(data, ONLOGIN)
 			}
 		}
 	})
+
 	client.init()
+
+	ee.emit('connect', ONCONNECT)
+	ee.emit('error', ONERROR)
+	ee.emit('login', ONLOGIN)
+
+	revert()
 })
 
-tap.test('connect handler fires with implicitInit', t => {
-	client = new HarperDBWebSocketClient({
-		hostname: 'localhost',
-		socketClusterOptions,
-		port: 1111,
-		username: 'cluster_user',
-		password: 'password',
-		handlers: {
-			onConnect: (data) => {
-				t.true(Object.prototype.hasOwnProperty.call(data, 'id'))
-				t.true(Object.prototype.hasOwnProperty.call(data, 'pingTimeout'))
-				t.true(Object.prototype.hasOwnProperty.call(data, 'isAuthenticated'))
-				t.true(Object.prototype.hasOwnProperty.call(data, 'authToken'))
-				t.end()
-			}
-		},
-		implicitInit: true
-	})
-})
+t.test('implicitInit should initialize the underlying socketcluster', t => {
+	t.plan(1)
 
-tap.test('login handler fires', t => {
-	client = new HarperDBWebSocketClient({
-		hostname: 'localhost',
-		socketClusterOptions,
-		port: 1111,
-		username: 'cluster_user',
-		password: 'password',
-		handlers: {
-			onLogin: (data) => {
-				t.equal(data, 'send login credentials')
-				t.end()
-			}
-		}
-	})
-	client.init()
-})
+	const spy = sinon.spy(HarperDBWebSocketClient.prototype, 'init')
 
-tap.skip('can insert records', t => {
-	// reset db using http
-	const dropTable = () => got.post('http://localhost', {
-		port: 9925,
-		headers: {
-			Authorization: 'Basic SERCX0FETUlOOnBhc3N3b3Jk'
-		},
-		retry: 0,
-		json: {
-			'operation': 'drop_table',
-			'schema': 'dev',
-			'table': 'dog'
-		}
+	const revert = HarperDBWebSocketClient.__set__('socketcluster', {
+		create: () => ({ on: () => {} })
 	})
 
-	const createTable = () => got.post('http://localhost', {
-		port: 9925,
-		headers: {
-			Authorization: 'Basic SERCX0FETUlOOnBhc3N3b3Jk'
-		},
-		retry: 0,
-		json: {
-			'operation': 'create_table',
-			'schema': 'dev',
-			'table': 'dog',
-			'hash_attribute': 'id'
-		}
-	})
-
-	dropTable()
-		.then(() => {
-			createTable()
-				.catch(err => {
-					console.error(err)
-					t.fail()
-					t.end()
-				})
-		})
-		.catch(err => {
-			const { response } = err
-			if (response && response.statusCode === 500 && JSON.parse(response.body)['error'] === 'Table \'dog\' does not exist in schema \'dev\'') {
-				createTable()
-					.catch(() => {
-						t.fail()
-						t.end()
-					})
-			} else {
-				t.fail()
-				t.end()
-			}
-		})
-
-	client = new HarperDBWebSocketClient({
-		hostname: 'localhost',
-		socketClusterOptions,
-		port: 1111,
-		username: 'cluster_user',
-		password: 'password',
+	new HarperDBWebSocketClient({
+		hostname: '',
+		port: 0,
+		username: '',
+		password: '',
 		implicitInit: true
 	})
 
-	const schema = 'dev'
-	const table = 'dog'
-	const records = [
-		{ id: '1', name: 'Harper', breed: 'Mutt' },
-		{ id: '2', name: 'Penny', breed: 'Mutt' }
-	]
-	client.subscribe(`${schema}:${table}`, data => {
-		console.log(data)
-		t.equal(data.type, 'HDB_TRANSACTION')
-		t.equal(data.transaction.operation, 'insert')
-		t.equal(data.transaction.schema, schema)
-		t.equal(data.transaction.table, table)
-		t.same(data.transaction.records, records)
-		t.equal(data.schema, schema)
-		t.equal(data.table, table)
-		t.end()
+	t.true(spy.calledOnce)
+
+	HarperDBWebSocketClient.prototype.init.restore()
+	revert()
+})
+
+t.test('socketClusterOptions should be defaulted', t => {
+	t.plan(3)
+
+	const client = new HarperDBWebSocketClient({
+		hostname: '',
+		port: 0,
+		username: '',
+		password: ''
 	})
-	client.insert(`${schema}:${table}`, records)
+
+	t.true(client.options.socketClusterOptions !== undefined)
+	t.true(typeof client.options.socketClusterOptions === 'object')
+	t.strictDeepEqual(client.options.socketClusterOptions, HarperDBWebSocketClient.defaultSocketClusterOptions)
+})
+
+t.test('socketClusterOptions should be overwritten', t => {
+	t.plan(3)
+
+	const socketClusterOptions = { foo: 'bar' }
+	const client = new HarperDBWebSocketClient({
+		hostname: '',
+		port: 0,
+		username: '',
+		password: '',
+		socketClusterOptions
+	})
+
+	t.true(client.options.socketClusterOptions !== undefined)
+	t.true(typeof client.options.socketClusterOptions === 'object')
+	t.strictDeepEqual(client.options.socketClusterOptions, socketClusterOptions)
 })

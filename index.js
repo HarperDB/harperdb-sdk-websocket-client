@@ -2,6 +2,17 @@
 
 const socketcluster = require('socketcluster-client')
 
+const defaultSocketClusterOptions = {
+	rejectUnauthorized: false,
+	autoConnect: true,
+	secure: true,
+	connectTimeout: 100000,
+	ackTimeout: 10000,
+	autoReconnectOptions: {
+		initialDelay: 1000,
+		maxDelay: 2000
+	}
+}
 class HarperDBWebSocketClient {
 	constructor(options) {
 		this.options = options
@@ -11,17 +22,7 @@ class HarperDBWebSocketClient {
 		}
 
 		if (!options.socketClusterOptions) {
-			this.options.socketClusterOptions = {
-				rejectUnauthorized: false,
-				autoConnect: true,
-				secure: true,
-				connectTimeout: 100000,
-				ackTimeout: 10000,
-				autoReconnectOptions: {
-					initialDelay: 1000,
-					maxDelay: 2000
-				}
-			}
+			this.options.socketClusterOptions = defaultSocketClusterOptions
 		}
 
 		if (options.implicitInit) {
@@ -155,5 +156,7 @@ class HarperDBWebSocketClient {
 		this.socket.subscribe(channel).watch(handler)
 	}
 }
+
+HarperDBWebSocketClient.defaultSocketClusterOptions = defaultSocketClusterOptions
 
 module.exports = HarperDBWebSocketClient

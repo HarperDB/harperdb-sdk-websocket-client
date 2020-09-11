@@ -59,7 +59,7 @@ Default SocketCluster options. Do not override.
 | - | - | - | - |
 | debug | boolean | `false` | When enabled, implicit handlers will log debugger information. Setting the `NODE_ENV` environment variable to `"development"` will enable this property. |
 | implicitInit | boolean | `false` | When enabled, will implicitly call the [init](#init) method. As shown in the examples, if not enabled you **must** call the `init` method yourself. |
-| socketClusterOptions | object | _see [defaultSocketClusterOptions](defaultsocketclusteroptions-object)_ | Configuration properties for the socket cluster connection. Supports any options for [SocketCluster v14](https://www.socketcluster.io/docs/14.4.2/api-socketcluster-client/) |
+| socketClusterOptions | object | _see [defaultSocketClusterOptions](#defaultsocketclusteroptions-object)_ | Configuration properties for the socket cluster connection. Supports any options for [SocketCluster v14](https://www.socketcluster.io/docs/14.4.2/api-socketcluster-client/) |
 | handlers | object | | A collection of handler functions which will override the defaults. See below for the available handler functions |
 | handlers.onError | function | [index.js](./index.js) | Fired when an error is thrown from the underlying socket cluster instance. |
 | handlers.onLogin | function | [index.js](./index.js) | A required handler for authenticating with the HarperDB cluster server. The second argument of the function must be called with `(null, { username: '', password: '' })` |

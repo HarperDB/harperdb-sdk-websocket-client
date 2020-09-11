@@ -46,6 +46,7 @@ declare class HarperDBWebSocketClient {
 
 	socket: any; // fill in with types of SocketCluster v14
 	options: HarperDBWebSocketClient.Options;
+	defaultSocketClusterOptions: Record<string, unknown>;
 
 	init(): void;
 

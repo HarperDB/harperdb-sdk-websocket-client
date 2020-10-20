@@ -1,4 +1,4 @@
-# harperdb-sdk-websocket-client
+# HarperDB Websocket Client
 
 A HarperDB WebSocket Client SDK powered by SocketCluster
 

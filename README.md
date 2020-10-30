@@ -4,12 +4,24 @@ A HarperDB WebSocket Client SDK powered by SocketCluster
 
 > Documentation for SocketCluster v14 can be found here: https://www.socketcluster.io/docs/14.4.2/api/
 
+# Install
+
+```js
+npm i -s harperdb-websocket-client
+```
+
+or
+
+```js
+yarn add harperdb-websocket-client
+```
+
 # API
 
 ## Class: **HarperDBWebSocketClient**
 
 ```js
-const HarperDBWebSocketClient = require('harperdb-sdk-websocket-client')
+const HarperDBWebSocketClient = require('harperdb-websocket-client')
 ```
 
 ### Properties

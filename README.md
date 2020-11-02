@@ -1,10 +1,13 @@
 # HarperDB Websocket Client
 
+![Test suite](https://github.com/harperdb/harperdb-websocket-client/workflows/Test%20suite/badge.svg)
+[![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com)
+[![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
+![GitHub](https://img.shields.io/github/license/harperdb/harperdb-sdk-websocket-client)
+
 A HarperDB WebSocket Client SDK powered by SocketCluster
 
-> Documentation for SocketCluster v14 can be found here: https://www.socketcluster.io/docs/14.4.2/api/
-
-# Install
+## Getting started
 
 ```js
 npm i -s harperdb-websocket-client
@@ -16,26 +19,13 @@ or
 yarn add harperdb-websocket-client
 ```
 
-# API
-
-## Class: **HarperDBWebSocketClient**
+## Documentation
 
 ```js
 const HarperDBWebSocketClient = require('harperdb-websocket-client')
 ```
 
-### Properties
-
-#### **options** _object_
-Initialized by the constructor using whatever is passed in as the first argument to the constructor.
-
-#### **initialized** _boolean_
-This property is used by the [init](#init) method to prevent the reinitialization of the socket cluster connection.
-
-It is recommended to treat this property as readonly to prevent unintended side effects.
-
-#### **defaultSocketClusterOptions** _object_
-Default SocketCluster options. Do not override.
+##### defaultSocketClusterOptions
 ```js
 {
   rejectUnauthorized: false,
@@ -49,22 +39,6 @@ Default SocketCluster options. Do not override.
   }
 }
 ```
-
-### Methods
-
-#### constructor([options: object])
-
-##### options
-| property | type | default | description |
-| - | - | - | - |
-| debug | boolean | `false` | When enabled, implicit handlers will log debugger information. Setting the `NODE_ENV` environment variable to `"development"` will enable this property. |
-| implicitInit | boolean | `false` | When enabled, will implicitly call the [init](#init) method. As shown in the examples, if not enabled you **must** call the `init` method yourself. |
-| socketClusterOptions | object | _see [defaultSocketClusterOptions](#defaultsocketclusteroptions-object)_ | Configuration properties for the socket cluster connection. Supports any options for [SocketCluster v14](https://www.socketcluster.io/docs/14.4.2/api-socketcluster-client/) |
-| handlers | object | | A collection of handler functions which will override the defaults. See below for the available handler functions |
-| handlers.onError | function | [index.js](./index.js) | Fired when an error is thrown from the underlying socket cluster instance. |
-| handlers.onLogin | function | [index.js](./index.js) | A required handler for authenticating with the HarperDB cluster server. The second argument of the function must be called with `(null, { username: '', password: '' })` |
-| handlers.onConnect | function | [index.js](./index.js) | Fired when the client connects to the server instance. Does not guarrantee authentication success. |
-
 ##### Example
 ```js
 const client = new HarperDBWebSocketClient({
@@ -88,7 +62,6 @@ Do not call if `options.implicitInit` was enabled.
 const client = new HarperDBWebSocketClient() // options.implicitInit is not enabled
 client.init()
 ```
-
 #### subscribe(channel, handler)
 
 Subscribes to a socket controller channel with the given handler.
@@ -143,3 +116,10 @@ client.delete(`dev:dog`, [
   { id: '2' }
 ])
 ```
+
+[click here to read the jsDoc markdown](api.md)
+
+
+## License
+
+MIT, see [license file](LICENSE)

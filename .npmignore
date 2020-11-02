@@ -1,5 +1,4 @@
 .idea
-test.js
+tests
 examples
-docker-compose.yml
-.eslintrc.json
+lib

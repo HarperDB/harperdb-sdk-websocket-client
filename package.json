@@ -1,31 +1,72 @@
 {
   "name": "harperdb-websocket-client",
-  "version": "1.0.2",
-  "description": "",
-  "main": "./index.js",
-  "types": "./index.d.ts",
-  "scripts": {
-    "test": "tap",
-    "docs": "jsdoc index.js"
-  },
+  "version": "1.0.3",
+  "description": "A websocket client for HarperDB",
+  "main": "dist/index.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/HarperDB/harperdb-sdk-websocket-client.git"
   },
-  "keywords": [],
   "author": "Ethan Arrowood <ethan.arrowood@gmail.com>",
   "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/HarperDB/harperdb-sdk-websocket-client/issues"
+  "homepage": "https://harperdb.io",
+  "scripts": {
+    "lint": "prettier --ignore-path .eslintignore --single-quote --write '**/*.{js,jsx,json,html,css,less,scss,yml}'",
+    "lint:test": "yarn lint && yarn test",
+    "test": "tap",
+    "docs": "jsdoc --readme README.md ./lib/*.js -d ./docs && jsdoc2md ./lib/*.js > ./api.md",
+    "build": "yarn build:merge && babel ./dist/index.js --out-dir ./dist --source-maps",
+    "build:merge": "rm -rf ./dist/** && rollup lib/index.js --file dist/index.js --format 'cjs'",
+    "build:min": "minify ./dist/index.js --out-file ./dist/index.min.js --mangle.keepFnName --mangle.keepClassName --",
+    "build:full": "yarn docs && yarn build && yarn build:min",
+    "build:ci": "yarn lint && yarn test && yarn build:full"
   },
-  "homepage": "https://github.com/HarperDB/harperdb-sdk-websocket-client#readme",
-  "devDependencies": {
-    "eslint": "^7.5.0",
-    "got": "^11.5.2",
-    "rewire": "^5.0.0",
-    "tap": "^14.10.8"
+  "babel": {
+    "presets": [
+      "@babel/env"
+    ]
   },
-  "peerDependencies": {
+  "nyc": {
+    "sourceMap": false,
+    "instrument": false
+  },
+  "prettier": {
+    "overrides": [
+      {
+        "files": [
+          ".prettierrc",
+          ".babelrc",
+          ".eslintrc",
+          ".stylelintrc"
+        ],
+        "options": {
+          "parser": "json"
+        }
+      }
+    ],
+    "singleQuote": true,
+    "printWidth": 160
+  },
+  "targets": "> 0.25%, not dead",
+  "dependencies": {
     "socketcluster-client": "^14.3.1"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.12.1",
+    "@babel/core": "^7.12.3",
+    "@babel/preset-env": "^7.12.1",
+    "@babel/register": "^7.12.1",
+    "babel-minify": "^0.5.1",
+    "babel-plugin-istanbul": "^6.0.0",
+    "cross-env": "^6.0.3",
+    "eslint": "^7.12.1",
+    "jsdoc": "^3.6.6",
+    "jsdoc-to-markdown": "^5.0.3",
+    "nyc": "^15.1.0",
+    "prettier": "^2.1.2",
+    "rewire": "^5.0.0",
+    "rollup": "^2.30.0",
+    "sinon": "^9.2.1",
+    "tap": "^14.10.8"
   }
 }

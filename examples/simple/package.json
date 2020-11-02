@@ -1,0 +1,13 @@
+{
+  "name": "harperdb-websocket-client-simple-example",
+  "version": "0.1.0",
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "axios": "^0.21.0",
+    "dotenv": "^8.2.0"
+  },
+  "scripts": {
+    "start": "node ./index.js"
+  }
+}

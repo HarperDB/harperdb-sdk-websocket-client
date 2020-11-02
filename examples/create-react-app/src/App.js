@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import './App.css';
 import HarperDBWebSocketClient from 'harperdb-websocket-client';
 
+// initialize the client outside the render cycle
 const client = new HarperDBWebSocketClient({
   hostname: 'localhost',
   socketClusterOptions: {

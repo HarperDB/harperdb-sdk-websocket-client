@@ -1,0 +1,5 @@
+# Ignore artifacts:
+docs
+dist
+tests
+.github

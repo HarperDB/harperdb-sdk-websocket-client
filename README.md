@@ -1,7 +1,6 @@
 # HarperDB Websocket Client
 
-![Test suite](https://github.com/harperdb/harperdb-websocket-client/workflows/Test%20suite/badge.svg)
-[![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com)
+[![JavaScript Style Guide](https://img.shields.io/badge/code_style-prettier-brightgreen.svg)](https://standardjs.com)
 [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 ![GitHub](https://img.shields.io/github/license/harperdb/harperdb-sdk-websocket-client)
 
